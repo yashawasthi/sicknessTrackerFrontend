@@ -524,7 +524,7 @@ function HomePage({ token, user, onLogout, theme, onToggleTheme }) {
 
           <div className="legend">
             <span><i style={{ background: '#ffffff' }} />No entry</span>
-            <span><i style={{ background: '#2ecc71' }} />Healthy</span>
+            <span><i style={{ background: '#2ed272' }} />Healthy</span>
             <span><i style={{ background: '#f6b1b1' }} />1</span>
             <span><i style={{ background: '#ef8a8a' }} />2</span>
             <span><i style={{ background: '#e35d5d' }} />3</span>

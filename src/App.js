@@ -9,6 +9,7 @@ import YearHeatmap from './components/YearHeatmap';
 
 const TOKEN_KEY = 'auth_token';
 const USER_KEY = 'auth_user';
+const THEME_KEY = 'ui_theme';
 
 function cookieGet(name) {
   const pairs = document.cookie.split(';').map((item) => item.trim());
@@ -52,11 +53,43 @@ function clearAuthStorage() {
   cookieDelete(USER_KEY);
 }
 
+function readTheme() {
+  const stored = localStorage.getItem(THEME_KEY);
+  if (stored === 'light' || stored === 'dark') return stored;
+  return 'dark';
+}
+
 function toDateKey(date) {
   const y = date.getUTCFullYear();
   const m = String(date.getUTCMonth() + 1).padStart(2, '0');
   const d = String(date.getUTCDate()).padStart(2, '0');
   return `${y}-${m}-${d}`;
+}
+
+function isValidDateKey(value) {
+  return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value);
+}
+
+function normalizeEntry(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+
+  let dateKey = raw.dateKey;
+  if (!isValidDateKey(dateKey) && raw.date) {
+    const parsed = new Date(raw.date);
+    if (!Number.isNaN(parsed.getTime())) {
+      dateKey = toDateKey(parsed);
+    }
+  }
+
+  if (!isValidDateKey(dateKey) || typeof raw.isSick !== 'boolean') return null;
+
+  return {
+    id: raw.id || raw._id || null,
+    date: raw.date,
+    dateKey,
+    isSick: raw.isSick,
+    severity: raw.isSick ? Number(raw.severity || 1) : null
+  };
 }
 
 function parseDateFromKey(dateKey) {
@@ -69,13 +102,21 @@ function describeEntry(entry) {
   return entry.isSick ? `Sick (${entry.severity}/5)` : 'Healthy';
 }
 
-function AuthPage({ type, onAuthSuccess }) {
+function AuthPage({ type, onAuthSuccess, theme, onToggleTheme }) {
   const navigate = useNavigate();
   const [form, setForm] = useState({ name: '', email: '', password: '' });
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const isLogin = type === 'login';
+
+  useEffect(() => {
+    setForm({ name: '', email: '', password: '' });
+    setError('');
+    setBusy(false);
+    setShowPassword(false);
+  }, [type]);
 
   async function onSubmit(event) {
     event.preventDefault();
@@ -100,7 +141,12 @@ function AuthPage({ type, onAuthSuccess }) {
   return (
     <div className="auth-page">
       <div className="auth-card">
-        <div className="brand-mark">PulseMap</div>
+        <div className="auth-top-row">
+          <div className="brand-mark">SicknessTracker</div>
+          <button type="button" className="theme-toggle" onClick={onToggleTheme}>
+            {theme === 'dark' ? 'Light' : 'Dark'}
+          </button>
+        </div>
         <h1>{isLogin ? 'Welcome Back' : 'Create Account'}</h1>
         <p>{isLogin ? 'Track your health pattern year-round.' : 'Start building your health timeline.'}</p>
 
@@ -129,13 +175,22 @@ function AuthPage({ type, onAuthSuccess }) {
 
           <label>
             Password
-            <input
-              type="password"
-              value={form.password}
-              onChange={(e) => setForm((prev) => ({ ...prev, password: e.target.value }))}
-              required
-              minLength={6}
-            />
+            <div className="password-input-wrap">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={form.password}
+                onChange={(e) => setForm((prev) => ({ ...prev, password: e.target.value }))}
+                required
+                minLength={6}
+              />
+              <button
+                type="button"
+                className="password-toggle-btn"
+                onClick={() => setShowPassword((prev) => !prev)}
+              >
+                {showPassword ? 'Hide' : 'Show'}
+              </button>
+            </div>
           </label>
 
           {error ? <div className="error-text">{error}</div> : null}
@@ -168,7 +223,7 @@ function DateButton({ value, onClick }) {
   );
 }
 
-function HomePage({ token, user, onLogout }) {
+function HomePage({ token, user, onLogout, theme, onToggleTheme }) {
   const nowYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState(nowYear);
   const [yearsFromApi, setYearsFromApi] = useState([]);
@@ -185,12 +240,14 @@ function HomePage({ token, user, onLogout }) {
   const [updatePreview, setUpdatePreview] = useState(null);
 
   const entryMap = useMemo(() => {
-    const map = {};
+    const map = Object.create(null);
     entries.forEach((entry) => {
+      if (!entry || !isValidDateKey(entry.dateKey)) return;
+      if (Number(entry.dateKey.slice(0, 4)) !== selectedYear) return;
       map[entry.dateKey] = entry;
     });
     return map;
-  }, [entries]);
+  }, [entries, selectedYear]);
 
   const healthyCount = useMemo(() => entries.filter((e) => !e.isSick).length, [entries]);
   const sickCount = useMemo(() => entries.filter((e) => e.isSick).length, [entries]);
@@ -209,6 +266,7 @@ function HomePage({ token, user, onLogout }) {
     value: selectedYear,
     label: String(selectedYear)
   };
+  const isDark = theme === 'dark';
 
   useEffect(() => {
     fetchYears(token)
@@ -219,10 +277,19 @@ function HomePage({ token, user, onLogout }) {
   useEffect(() => {
     setBusy(true);
     setError('');
+    setEntries([]);
 
     fetchEntriesByYear(selectedYear, token)
-      .then((data) => setEntries(Array.isArray(data.entries) ? data.entries : []))
-      .catch((err) => setError(err.message || 'Failed to load entries'))
+      .then((data) => {
+        const normalized = Array.isArray(data.entries)
+          ? data.entries.map(normalizeEntry).filter(Boolean)
+          : [];
+        setEntries(normalized);
+      })
+      .catch((err) => {
+        setEntries([]);
+        setError(err.message || 'Failed to load entries');
+      })
       .finally(() => setBusy(false));
   }, [selectedYear, token]);
 
@@ -231,6 +298,11 @@ function HomePage({ token, user, onLogout }) {
 
     const normalized = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
     setFormDate(normalized);
+
+    if (normalized.getUTCFullYear() !== selectedYear) {
+      setExistingEntryNotice(null);
+      return;
+    }
 
     const key = toDateKey(normalized);
     const existing = entryMap[key];
@@ -251,7 +323,8 @@ function HomePage({ token, user, onLogout }) {
 
     try {
       const response = await saveEntry(payload, token);
-      const saved = response.entry;
+      const saved = normalizeEntry(response.entry);
+      if (!saved) throw new Error('Invalid entry returned by server.');
 
       setEntries((prev) => {
         const next = prev.filter((item) => item.dateKey !== saved.dateKey);
@@ -261,7 +334,6 @@ function HomePage({ token, user, onLogout }) {
       });
 
       setYearsFromApi((prev) => (prev.includes(selectedYear) ? prev : [...prev, selectedYear]));
-      setExistingEntryNotice(saved);
       setUpdatePreview(null);
       setInfo('Entry saved.');
     } catch (err) {
@@ -297,8 +369,11 @@ function HomePage({ token, user, onLogout }) {
   return (
     <div className="app-shell">
       <header className="top-bar">
-        <div className="logo">PulseMap</div>
+        <div className="logo">SicknessTracker</div>
         <div className="user-box">
+          <button type="button" className="theme-toggle" onClick={onToggleTheme}>
+            {theme === 'dark' ? 'Light' : 'Dark'}
+          </button>
           <span className="user-name">{user?.name || user?.email || 'User'}</span>
           <button type="button" className="logout-btn" onClick={onLogout}>
             Logout
@@ -322,6 +397,8 @@ function HomePage({ token, user, onLogout }) {
                 dropdownMode="select"
                 shouldCloseOnSelect
                 popperPlacement="bottom-start"
+                calendarClassName="tracker-calendar"
+                popperClassName="tracker-calendar-popper"
               />
             </label>
 
@@ -398,14 +475,14 @@ function HomePage({ token, user, onLogout }) {
                     ...base,
                     minHeight: 38,
                     borderRadius: 12,
-                    borderColor: '#1f2937',
-                    background: '#0f172a',
+                    borderColor: isDark ? '#2d3f61' : '#c5d3ea',
+                    background: isDark ? '#0f172a' : '#ffffff',
                     boxShadow: 'none',
                     cursor: 'pointer'
                   }),
                   singleValue: (base) => ({
                     ...base,
-                    color: '#e2e8f0',
+                    color: isDark ? '#e2e8f0' : '#14213a',
                     width: '100%',
                     textAlign: 'center',
                     fontWeight: 700
@@ -420,13 +497,13 @@ function HomePage({ token, user, onLogout }) {
                     ...base,
                     borderRadius: 12,
                     overflow: 'hidden',
-                    background: '#0b1325'
+                    background: isDark ? '#0b1325' : '#ffffff'
                   }),
                   option: (base, state) => ({
                     ...base,
                     cursor: 'pointer',
-                    background: state.isFocused ? '#1e293b' : '#0b1325',
-                    color: '#e2e8f0'
+                    background: state.isFocused ? (isDark ? '#1e293b' : '#e9f1ff') : (isDark ? '#0b1325' : '#ffffff'),
+                    color: isDark ? '#e2e8f0' : '#14213a'
                   })
                 }}
               />
@@ -438,7 +515,11 @@ function HomePage({ token, user, onLogout }) {
           </div>
 
           <div className="heatmap-content">
-            {busy ? <div className="muted">Loading...</div> : <YearHeatmap year={selectedYear} entries={entries} onDayClick={onHeatmapDayClick} />}
+            {busy ? (
+              <div className="muted">Loading...</div>
+            ) : (
+              <YearHeatmap year={selectedYear} entries={entries} onDayClick={onHeatmapDayClick} theme={theme} />
+            )}
           </div>
 
           <div className="legend">
@@ -487,7 +568,7 @@ function HomePage({ token, user, onLogout }) {
                 className="primary-btn"
                 onClick={() => commitSave(updatePreview.next)}
               >
-                Save Entry
+                Update Entry
               </button>
             </div>
           </div>
@@ -510,6 +591,12 @@ function PublicOnlyRoute({ token, children }) {
 export default function App() {
   const location = useLocation();
   const [auth, setAuth] = useState(() => readPersistedAuth());
+  const [theme, setTheme] = useState(() => readTheme());
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem(THEME_KEY, theme);
+  }, [theme]);
 
   useEffect(() => {
     if (!auth.token) return;
@@ -543,13 +630,17 @@ export default function App() {
     setAuth({ token: null, user: null });
   }
 
+  function onToggleTheme() {
+    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
+  }
+
   return (
     <Routes>
       <Route
         path="/login"
         element={
           <PublicOnlyRoute token={auth.token}>
-            <AuthPage type="login" onAuthSuccess={onAuthSuccess} />
+            <AuthPage type="login" onAuthSuccess={onAuthSuccess} theme={theme} onToggleTheme={onToggleTheme} />
           </PublicOnlyRoute>
         }
       />
@@ -557,7 +648,7 @@ export default function App() {
         path="/signup"
         element={
           <PublicOnlyRoute token={auth.token}>
-            <AuthPage type="signup" onAuthSuccess={onAuthSuccess} />
+            <AuthPage type="signup" onAuthSuccess={onAuthSuccess} theme={theme} onToggleTheme={onToggleTheme} />
           </PublicOnlyRoute>
         }
       />
@@ -565,7 +656,7 @@ export default function App() {
         path="/home"
         element={
           <ProtectedRoute token={auth.token}>
-            <HomePage token={auth.token} user={auth.user} onLogout={onLogout} />
+            <HomePage token={auth.token} user={auth.user} onLogout={onLogout} theme={theme} onToggleTheme={onToggleTheme} />
           </ProtectedRoute>
         }
       />

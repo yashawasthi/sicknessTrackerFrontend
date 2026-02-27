@@ -1,12 +1,42 @@
 :root {
-  --bg: #060b18;
-  --bg-soft: #0b1325;
-  --card: #111a2f;
-  --line: #24324f;
-  --text: #e6edf8;
-  --muted: #9eb0cf;
-  --accent: #41b3ff;
+  --bg: #061127;
+  --bg-soft: #0d1a35;
+  --card: #10203e;
+  --line: #2a3f68;
+  --text: #e8eefb;
+  --muted: #a7b7d8;
+  --input-bg: #0b1831;
+  --accent: #3f8cff;
+  --accent-soft: #66adff;
   --good: #2ecc71;
+  --danger: #d84040;
+  --month-sep: #4e638f;
+  --cell-size: clamp(7px, 0.75vw, 12px);
+  --calendar-bg: #0f1b35;
+  --calendar-text: #e8eefb;
+  --calendar-border: #2a3f68;
+  --calendar-hover: #1e335e;
+  --calendar-selected: #3f8cff;
+}
+
+:root[data-theme='light'] {
+  --bg: #f2f7ff;
+  --bg-soft: #f7faff;
+  --card: #ffffff;
+  --line: #ccd9ef;
+  --text: #152645;
+  --muted: #5b6f93;
+  --input-bg: #ffffff;
+  --accent: #2463d8;
+  --accent-soft: #4c84e6;
+  --good: #21a55e;
+  --danger: #bc2b2b;
+  --month-sep: #b8cae8;
+  --calendar-bg: #ffffff;
+  --calendar-text: #12233f;
+  --calendar-border: #cbd9f1;
+  --calendar-hover: #eaf2ff;
+  --calendar-selected: #2463d8;
 }
 
 * {
@@ -23,8 +53,8 @@ body,
   font-family: 'Avenir Next', 'Segoe UI', sans-serif;
   color: var(--text);
   background:
-    radial-gradient(circle at 15% -10%, #1a2d5f 0%, transparent 40%),
-    radial-gradient(circle at 85% 110%, #2d1b4f 0%, transparent 30%),
+    radial-gradient(circle at 12% -10%, rgba(49, 103, 206, 0.25) 0%, transparent 38%),
+    radial-gradient(circle at 90% 120%, rgba(202, 38, 62, 0.17) 0%, transparent 35%),
     var(--bg);
 }
 
@@ -41,28 +71,38 @@ button {
   height: 100%;
   display: grid;
   place-items: center;
-  padding: 20px;
+  padding: clamp(14px, 2vw, 24px);
 }
 
 .auth-card {
-  width: min(460px, 92vw);
+  width: min(480px, 94vw);
   border: 1px solid var(--line);
   border-radius: 18px;
-  background: linear-gradient(165deg, rgba(17, 26, 47, 0.95), rgba(11, 19, 37, 0.95));
-  padding: 22px;
+  background: linear-gradient(165deg, color-mix(in oklab, var(--card) 92%, #ffffff 8%), var(--bg-soft));
+  padding: clamp(16px, 2vw, 24px);
+  box-shadow: 0 18px 45px rgba(6, 18, 40, 0.24);
+}
+
+.auth-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 
 .brand-mark {
-  display: inline-block;
-  padding: 6px 10px;
+  display: inline-flex;
+  padding: 7px 12px;
   border-radius: 999px;
-  border: 1px solid #36568f;
-  background: #10213f;
-  font-weight: 700;
+  border: 1px solid var(--line);
+  background: color-mix(in oklab, var(--card) 87%, var(--accent) 13%);
+  font-weight: 800;
+  letter-spacing: 0.02em;
 }
 
 .auth-card h1 {
   margin: 12px 0 6px;
+  font-size: clamp(1.35rem, 2vw, 1.8rem);
 }
 
 .auth-card p {
@@ -78,17 +118,37 @@ button {
 label {
   display: grid;
   gap: 7px;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
 }
 
 input,
 .date-button {
   width: 100%;
-  border: 1px solid #2c3a58;
+  border: 1px solid var(--line);
   border-radius: 12px;
-  background: #0d162b;
+  background: var(--input-bg);
   color: var(--text);
-  padding: 11px 12px;
+  padding: 9px 11px;
+}
+
+.password-input-wrap {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.password-toggle-btn {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: color-mix(in oklab, var(--card) 85%, var(--accent) 15%);
+  color: var(--text);
+  padding: 8px 10px;
+  font-weight: 600;
+}
+
+.password-toggle-btn:hover {
+  background: color-mix(in oklab, var(--card) 75%, var(--accent) 25%);
 }
 
 .date-button {
@@ -100,15 +160,16 @@ input,
 .logout-btn,
 .year-nav,
 .toggle-btn,
-.chip {
+.chip,
+.theme-toggle {
   border: none;
   border-radius: 12px;
   color: var(--text);
 }
 
 .primary-btn {
-  background: linear-gradient(135deg, #1f7ae0, #37a3ff);
-  padding: 10px 14px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-soft));
+  padding: 8px 12px;
   font-weight: 700;
 }
 
@@ -121,10 +182,22 @@ input,
   cursor: not-allowed;
 }
 
+.theme-toggle {
+  background: color-mix(in oklab, var(--card) 84%, var(--accent) 16%);
+  border: 1px solid var(--line);
+  padding: 8px 10px;
+  font-size: 0.83rem;
+  font-weight: 700;
+}
+
+.theme-toggle:hover {
+  background: color-mix(in oklab, var(--card) 72%, var(--accent) 28%);
+}
+
 .text-btn {
   border: none;
   background: none;
-  color: #77baff;
+  color: var(--accent-soft);
   padding: 0;
   font-weight: 700;
 }
@@ -146,40 +219,45 @@ input,
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 16px;
+  padding: 10px clamp(12px, 2vw, 18px);
   border-bottom: 1px solid var(--line);
-  background: rgba(8, 13, 26, 0.92);
+  background: color-mix(in oklab, var(--bg-soft) 78%, transparent 22%);
   backdrop-filter: blur(8px);
 }
 
 .logo {
-  font-size: 1.25rem;
-  font-weight: 800;
+  font-size: clamp(1.05rem, 2vw, 1.35rem);
+  font-weight: 900;
   letter-spacing: 0.03em;
 }
 
 .user-box {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   align-items: center;
 }
 
 .user-name {
   color: var(--muted);
   font-size: 0.9rem;
+  max-width: 190px;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
 }
 
 .logout-btn {
-  background: #192748;
+  background: color-mix(in oklab, var(--card) 84%, var(--danger) 16%);
   padding: 8px 12px;
 }
 
 .main-layout {
   min-height: 0;
   display: grid;
-  grid-template-columns: minmax(300px, 360px) 1fr;
+  grid-template-columns: 1fr;
+  grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
   gap: 12px;
-  padding: 12px;
+  padding: clamp(8px, 1.2vw, 14px);
   overflow: hidden;
 }
 
@@ -187,27 +265,31 @@ input,
 .heatmap-card {
   border: 1px solid var(--line);
   border-radius: 16px;
-  background: linear-gradient(180deg, rgba(17, 26, 47, 0.95), rgba(10, 17, 33, 0.95));
+  background: linear-gradient(175deg, color-mix(in oklab, var(--card) 93%, #ffffff 7%), var(--bg-soft));
   min-height: 0;
+  box-shadow: 0 10px 24px rgba(7, 20, 43, 0.12);
 }
 
 .entry-card {
-  padding: 14px;
+  padding: 10px 12px;
+  overflow: hidden;
 }
 
 .entry-card h2,
 .heatmap-card h2 {
-  margin: 0 0 12px;
+  margin: 0 0 8px;
+  font-size: clamp(1.02rem, 1.3vw, 1.25rem);
 }
 
 .entry-form {
   display: grid;
-  gap: 12px;
+  gap: 8px;
+  align-content: start;
 }
 
 .field {
   display: grid;
-  gap: 8px;
+  gap: 5px;
 }
 
 .toggle-row {
@@ -217,20 +299,20 @@ input,
 }
 
 .toggle-btn {
-  background: #1b2b49;
-  padding: 10px;
+  background: color-mix(in oklab, var(--card) 83%, var(--accent) 17%);
+  padding: 8px;
 }
 
 .toggle-btn.active-yes {
-  background: #1f8d50;
+  background: color-mix(in oklab, var(--good) 66%, #183126 34%);
 }
 
 .toggle-btn.active-no {
-  background: #ba2e2e;
+  background: color-mix(in oklab, var(--danger) 70%, #3a1717 30%);
 }
 
 .severity-holder {
-  min-height: 68px;
+  min-height: 56px;
   transition: opacity 0.2s ease;
 }
 
@@ -250,12 +332,12 @@ input,
 }
 
 .chip {
-  background: #1a2743;
-  padding: 9px 0;
+  background: color-mix(in oklab, var(--card) 84%, var(--accent) 16%);
+  padding: 7px 0;
 }
 
 .chip.selected {
-  background: #c93a3a;
+  background: color-mix(in oklab, var(--danger) 70%, var(--accent) 30%);
 }
 
 .heatmap-card {
@@ -278,8 +360,8 @@ input,
   align-items: center;
   padding: 8px 12px;
   border-radius: 999px;
-  border: 1px solid #334d7a;
-  background: #122342;
+  border: 1px solid var(--line);
+  background: color-mix(in oklab, var(--card) 86%, var(--accent) 14%);
   font-size: 0.88rem;
   justify-self: center;
 }
@@ -293,8 +375,8 @@ input,
 .year-nav {
   width: 38px;
   height: 38px;
-  background: #0f172a;
-  border: 1px solid #2a3f68;
+  background: color-mix(in oklab, var(--card) 86%, var(--accent) 14%);
+  border: 1px solid var(--line);
 }
 
 .year-select__control {
@@ -303,59 +385,20 @@ input,
 
 .heatmap-content {
   min-height: 0;
-  overflow: hidden;
+  overflow: visible;
   display: grid;
-  align-items: center;
+  align-items: stretch;
 }
 
-.heatmap-wrapper {
+.heatmap-echart-wrap {
   width: 100%;
-  display: grid;
-  gap: 8px;
-}
-
-.heatmap-grid {
-  display: flex;
-  gap: 2px;
-  align-items: flex-start;
-  width: 100%;
-  overflow: hidden;
-}
-
-.heatmap-week {
-  display: grid;
-  grid-template-rows: repeat(7, 1fr);
-  gap: 2px;
-}
-
-.heatmap-week.month-break {
-  margin-left: 4px;
-}
-
-.heatmap-cell {
-  width: clamp(8px, 1.2vw, 12px);
-  height: clamp(8px, 1.2vw, 12px);
-  border: 1px solid #1e2a42;
-  border-radius: 2px;
-  padding: 0;
-}
-
-.heatmap-cell.empty {
-  background: transparent;
-  border-color: transparent;
-}
-
-.heatmap-month-row {
-  display: grid;
-  grid-template-columns: repeat(53, minmax(0, 1fr));
-  gap: 2px;
-  align-items: center;
-}
-
-.month-label {
-  font-size: 0.72rem;
-  color: var(--muted);
-  text-align: center;
+  height: 100%;
+  min-height: 100%;
+  max-height: none;
+  border: 1px solid color-mix(in oklab, var(--line) 82%, transparent 18%);
+  border-radius: 12px;
+  background: color-mix(in oklab, var(--card) 90%, #ffffff 10%);
+  padding: 6px;
 }
 
 .legend {
@@ -365,7 +408,7 @@ input,
   align-items: center;
   font-size: 0.82rem;
   color: var(--muted);
-  padding-top: 6px;
+  padding-top: 8px;
 }
 
 .legend span {
@@ -378,16 +421,16 @@ input,
   width: 10px;
   height: 10px;
   border-radius: 2px;
-  border: 1px solid #2b3957;
+  border: 1px solid var(--line);
 }
 
 .info-text {
-  color: #7dc6ff;
+  color: #4f95ff;
   font-size: 0.88rem;
 }
 
 .error-text {
-  color: #ff8e8e;
+  color: #e64646;
   font-size: 0.88rem;
 }
 
@@ -398,7 +441,7 @@ input,
 .modal {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.45);
+  background: rgba(5, 8, 18, 0.54);
   display: grid;
   place-items: center;
   z-index: 30;
@@ -408,7 +451,7 @@ input,
   width: min(440px, calc(100vw - 24px));
   border: 1px solid var(--line);
   border-radius: 14px;
-  background: #111b31;
+  background: var(--card);
   padding: 14px;
 }
 
@@ -418,7 +461,7 @@ input,
 
 .modal-card p {
   margin: 6px 0;
-  color: #d8e3f8;
+  color: var(--text);
 }
 
 .modal-actions {
@@ -429,19 +472,87 @@ input,
 }
 
 .ghost-btn {
-  background: #1a2743;
+  background: color-mix(in oklab, var(--card) 84%, var(--accent) 16%);
   padding: 10px 14px;
 }
 
-@media (max-width: 980px) {
-  .main-layout {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto 1fr;
+.tracker-calendar-popper {
+  z-index: 25;
+}
+
+.tracker-calendar,
+.react-datepicker {
+  border: 1px solid var(--calendar-border) !important;
+  border-radius: 12px !important;
+  background: var(--calendar-bg) !important;
+  color: var(--calendar-text) !important;
+  box-shadow: 0 12px 24px rgba(6, 16, 34, 0.22);
+}
+
+.react-datepicker__header {
+  background: color-mix(in oklab, var(--calendar-bg) 86%, var(--accent) 14%) !important;
+  border-bottom: 1px solid var(--calendar-border) !important;
+}
+
+.react-datepicker__current-month,
+.react-datepicker-time__header,
+.react-datepicker-year-header,
+.react-datepicker__day-name {
+  color: var(--calendar-text) !important;
+}
+
+.react-datepicker__day,
+.react-datepicker__month-text,
+.react-datepicker__quarter-text,
+.react-datepicker__year-text {
+  color: var(--calendar-text) !important;
+  border-radius: 8px !important;
+}
+
+.react-datepicker__day:hover,
+.react-datepicker__month-text:hover,
+.react-datepicker__quarter-text:hover,
+.react-datepicker__year-text:hover {
+  background: var(--calendar-hover) !important;
+}
+
+.react-datepicker__day--selected,
+.react-datepicker__day--keyboard-selected {
+  background: var(--calendar-selected) !important;
+  color: #ffffff !important;
+}
+
+.react-datepicker__day--outside-month {
+  color: color-mix(in oklab, var(--calendar-text) 45%, transparent 55%) !important;
+}
+
+.react-datepicker__navigation-icon::before {
+  border-color: var(--calendar-text) !important;
+}
+
+.react-datepicker__month-dropdown,
+.react-datepicker__year-dropdown,
+.react-datepicker__month-select,
+.react-datepicker__year-select {
+  background: var(--calendar-bg) !important;
+  color: var(--calendar-text) !important;
+  border: 1px solid var(--calendar-border) !important;
+  border-radius: 8px !important;
+}
+
+@media (max-width: 1240px) {
+  :root {
+    --cell-size: clamp(7px, 0.72vw, 11px);
+  }
+}
+
+@media (max-width: 1020px) {
+  :root {
+    --cell-size: clamp(7px, 0.95vw, 10px);
   }
 
   .entry-card {
-    max-height: 300px;
-    overflow: hidden;
+    max-height: none;
   }
 
   .heatmap-top-row {
@@ -449,8 +560,46 @@ input,
     gap: 8px;
   }
 
+  .heatmap-echart-wrap {
+    min-height: 100%;
+  }
+
   .year-tools,
   .mini-stats {
     justify-self: start;
+  }
+}
+
+@media (max-width: 700px) {
+  :root {
+    --cell-size: clamp(6px, 1.45vw, 9px);
+  }
+
+  .app-shell {
+    grid-template-rows: 58px 1fr;
+  }
+
+  .top-bar {
+    gap: 8px;
+    flex-wrap: wrap;
+    padding: 8px 10px;
+  }
+
+  .user-box {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .entry-card {
+    max-height: none;
+  }
+
+  .heatmap-echart-wrap {
+    min-height: 100%;
+  }
+
+  .legend {
+    gap: 8px;
+    font-size: 0.76rem;
   }
 }
